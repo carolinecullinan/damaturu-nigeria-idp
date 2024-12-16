@@ -47,7 +47,7 @@ def raster_to_points(raster_path, output_path, sample_rate=1):
     sample_rate (int): Take every nth pixel (1 = all pixels)
     """
     with rasterio.open(raster_path) as src:
-        data = src.read(1)  # Read first band
+        data = src.read(1)  # read first band
         
         # peport initial size
         print(f"input raster dimensions: {src.width} x {src.height}")
