@@ -83,55 +83,99 @@ def raster_to_points(raster_path, output_path, sample_rate=1):
         return points
     
 # convert (population density) raster to polygon GeoJSON, preserving the grid structure
+# def raster_to_polygons(raster_path, shapefile_path, output_path):
+#     """
+#     convert raster to polygons while preserving the grid structure.
+    
+#     Parameters:
+#     raster_path (str): Path to input raster
+#     shapefile_path (str): Path to shapefile for clipping
+#     output_path (str): Path for output GeoJSON
+#     """
+    
+#     # read and clip the raster first
+#     shape = gpd.read_file(shapefile_path)
+#     geometry = [feature["geometry"] for feature in shape.to_dict("records")]
+    
+#     with rasterio.open(raster_path) as src:
+#         # clip the raster
+#         clipped_raster, clipped_transform = rasterio.mask.mask(src, 
+#                                                              geometry,
+#                                                              crop=True)
+        
+#         # get the mask of valid data
+#         mask = ~np.isnan(clipped_raster[0])
+        
+#         # generate shapes from the raster
+#         results = (
+#             {'properties': {'population_density': float(v)}, 'geometry': s}
+#             for s, v in shapes(clipped_raster[0], 
+#                              mask=mask,
+#                              transform=clipped_transform)
+#         )
+        
+#         # convert to geodataframe
+#         geoms = list(results)
+#         gdf = gpd.GeoDataFrame.from_features(geoms)
+        
+#         # set CRS from the input raster
+#         gdf.set_crs(src.crs, inplace=True)
+        
+#         # filter out any NoData values
+#         gdf = gdf[gdf.population_density != src.nodata]
+        
+#         # save to GeoJSON
+#         gdf.to_file(output_path, driver='GeoJSON')
+        
+#         print(f"\nCreated {len(gdf)} polygons")
+#         print(f"Value range: {gdf.population_density.min():.2f} to {gdf.population_density.max():.2f}")
+        
+#         return gdf
+
+   #######
+   #######
+# edited raster_to_polygons function to check and handle data types
 def raster_to_polygons(raster_path, shapefile_path, output_path):
-    """
-    convert raster to polygons while preserving the grid structure.
-    
-    Parameters:
-    raster_path (str): Path to input raster
-    shapefile_path (str): Path to shapefile for clipping
-    output_path (str): Path for output GeoJSON
-    """
-    
-    # read and clip the raster first
     shape = gpd.read_file(shapefile_path)
     geometry = [feature["geometry"] for feature in shape.to_dict("records")]
     
     with rasterio.open(raster_path) as src:
-        # clip the raster
-        clipped_raster, clipped_transform = rasterio.mask.mask(src, 
-                                                             geometry,
-                                                             crop=True)
+        print(f"Original data type: {src.dtypes[0]}")
         
-        # get the mask of valid data
-        mask = ~np.isnan(clipped_raster[0])
+        # Read the data and convert to float32
+        data = src.read(1).astype('float32')
         
-        # generate shapes from the raster
-        results = (
-            {'properties': {'population_density': float(v)}, 'geometry': s}
-            for s, v in shapes(clipped_raster[0], 
-                             mask=mask,
-                             transform=clipped_transform)
-        )
+        # Create a new raster with float32 dtype
+        profile = src.profile.copy()
+        profile.update(dtype='float32')
         
-        # convert to geodataframe
-        geoms = list(results)
-        gdf = gpd.GeoDataFrame.from_features(geoms)
-        
-        # set CRS from the input raster
-        gdf.set_crs(src.crs, inplace=True)
-        
-        # filter out any NoData values
-        gdf = gdf[gdf.population_density != src.nodata]
-        
-        # save to GeoJSON
-        gdf.to_file(output_path, driver='GeoJSON')
-        
-        print(f"\nCreated {len(gdf)} polygons")
-        print(f"Value range: {gdf.population_density.min():.2f} to {gdf.population_density.max():.2f}")
-        
-        return gdf
-    
+        with rasterio.MemoryFile() as memfile:
+            with memfile.open(**profile) as mem:
+                mem.write(data, 1)
+                
+                clipped_raster, clipped_transform = rasterio.mask.mask(mem, geometry, crop=True)
+                mask = ~np.isnan(clipped_raster[0])
+                
+                results = (
+                    {'properties': {'population_density': float(v)}, 'geometry': s}
+                    for s, v in shapes(clipped_raster[0], mask=mask, transform=clipped_transform)
+                )
+                
+                geoms = list(results)
+                gdf = gpd.GeoDataFrame.from_features(geoms)
+                gdf.set_crs(src.crs, inplace=True)
+                gdf = gdf[gdf.population_density != src.nodata]
+                gdf.to_file(output_path, driver='GeoJSON')
+                
+                return gdf
+
+
+
+
+
+
+
+
 ## working with population data (WorldPop Data 2020, 100 m resolution (- must convert to population density first)
 # calculate population density for Damaturu AOI and convert (population density) raster to polygon GeoJSON, preserving the grid structure
 def pd_calc_raster_to_polygons(raster_path, shapefile_path, output_path):
