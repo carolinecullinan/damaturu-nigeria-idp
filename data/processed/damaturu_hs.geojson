@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "full_id": "n7816210962", "osm_id": "7816210962", "osm_type": "node", "amenity": "hospital", "healthcare": null, "services": "COVID_19 Isolation centre", "name": "State Specialist Hospital", "health_spe": "yes", "addr_ward": "Nayinawa", "addr_state": "yobe", "addr_distr": "Damaturu" }, "geometry": { "type": "Point", "coordinates": [ 11.9566172, 11.7296466 ] } },
+{ "type": "Feature", "properties": { "full_id": "n9057046021", "osm_id": "9057046021", "osm_type": "node", "amenity": "hospital", "healthcare": "hospital", "services": null, "name": "family support", "health_spe": null, "addr_ward": null, "addr_state": null, "addr_distr": null }, "geometry": { "type": "Point", "coordinates": [ 11.9559489, 11.763495 ] } }
+]
+}
